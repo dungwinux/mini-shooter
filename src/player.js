@@ -41,6 +41,9 @@ class Player {
     get isDead() {
         return this.health <= 0;
     }
+    get reloadTime() {
+        return 2000 + (!this.hasCockBullet || this.isJam ? 1 : 0) * 1000;
+    }
     showInfo() {
         push();
         fill("blue");
@@ -59,13 +62,21 @@ class Player {
 
         // For displaying time left and loading circle
         // reloadTime: 0 .. 2
-        let reloadTime = (this.isLoading - Date.now()) / 1000;
+        let reloadTime = this.isLoading - Date.now();
+        let arc_per = map(
+            reloadTime,
+            0,
+            this.reloadTime,
+            -HALF_PI,
+            PI + HALF_PI,
+            true
+        );
 
         textSize(14);
         // Info display
         text(
             this.isLoading
-                ? "Reloading\n" + reloadTime.toString() + " s"
+                ? "Reloading\n" + (reloadTime / 1000).toString() + " s"
                 : (this.isJam ? "Jammed\n" : "Magazine\n") +
                       (this.magazine + this.hasCockBullet) +
                       "/" +
@@ -82,7 +93,7 @@ class Player {
                 (this.size * 5) / 2,
                 (this.size * 5) / 2,
                 -PI / 2,
-                PI * reloadTime - PI / 2
+                arc_per
             );
         }
         pop();
@@ -160,7 +171,7 @@ class Player {
             !this.isLoading &&
             ((this.magazine < this.magCapacity && this.ammo > 0) || this.isJam)
         ) {
-            let loadingTime = (2 + (this.isLoading ? 1 : 0)) * 1000;
+            let loadingTime = this.reloadTime;
             setTimeout(() => {
                 // 30 + 1
                 this.ammo -= -this.magazine;
@@ -173,8 +184,9 @@ class Player {
                     this.magazine -= 1;
                 }
                 this.isLoading = false;
-            }, 2000);
-            this.isLoading = Date.now() + 2000;
+            }, loadingTime);
+            this.isLoading = Date.now() + loadingTime;
+            console.log(loadingTime);
         }
     }
     /*
